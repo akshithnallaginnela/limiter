@@ -8,6 +8,8 @@ let conversationTitle = 'New Chat';
 let injectedWidget: HTMLDivElement | null = null;
 let lastScrapedMessageCount = 0;
 let lastStats: any = null;
+let processedMessageSignatures = new Set<string>();
+let isFirstRun = true;
 
 // Determine platform from URL
 function detectPlatform(): string {
@@ -28,8 +30,13 @@ function scrapeConversationData() {
   const urlParts = window.location.pathname.split('/');
   // Extract conversation ID from URL if present
   let newConvId = 'default_conv';
-  if (platform === 'chatgpt' && urlParts.includes('c')) {
-    newConvId = urlParts[urlParts.indexOf('c') + 1] || 'default_conv';
+  if (platform === 'chatgpt') {
+    const cIndex = urlParts.indexOf('c');
+    const gIndex = urlParts.indexOf('g');
+    const targetIdx = cIndex >= 0 ? cIndex : gIndex;
+    if (targetIdx >= 0) {
+      newConvId = urlParts[targetIdx + 1] || 'default_conv';
+    }
   } else if (platform === 'claude' && urlParts.includes('chat')) {
     newConvId = urlParts[urlParts.indexOf('chat') + 1] || 'default_conv';
   } else if (platform === 'gemini') {
@@ -56,7 +63,7 @@ function scrapeConversationData() {
       currentMessages = Array.from(elements).map((el) => {
         const isUser = el.querySelector('[data-testid="user-message"]') !== null || 
                        el.querySelector('[class*="user"]') !== null || 
-                       el.outerHTML.includes('user');
+                       el.outerHTML.includes('user-message');
         const text = el.querySelector('.markdown')?.textContent?.trim() || el.textContent?.trim() || '';
         return {
           role: (isUser ? 'user' : 'assistant') as 'user' | 'assistant',
@@ -97,12 +104,16 @@ function scrapeConversationData() {
     console.error('Error selecting messages in scrapeConversationData:', err);
   }
 
-  // Handle conversation changes (initial load or chat switches)
-  if (newConvId !== conversationId) {
+  // Handle first run initialization
+  if (isFirstRun) {
+    isFirstRun = false;
     conversationId = newConvId;
-    // Set to current count so we ignore the historical prompts already visible on the screen
+    processedMessageSignatures.clear();
+    currentMessages.forEach((msg, idx) => {
+      const sig = `${msg.role}_${msg.content.substring(0, 100)}_${idx}`;
+      processedMessageSignatures.add(sig);
+    });
     lastScrapedMessageCount = currentMessages.length;
-    conversationTitle = document.title || `${platform.toUpperCase()} Chat`;
     
     // Immediately query current stats from background to show them
     chrome.runtime.sendMessage({ type: 'GET_CURRENT_USAGE', platform }, (response) => {
@@ -110,14 +121,47 @@ function scrapeConversationData() {
         updateWidgetDisplay(response.stats);
       }
     });
-    return; // Don't send initial history
+    return;
   }
 
-  if (currentMessages.length > lastScrapedMessageCount) {
-    // Slice only the newly appended messages (e.g. index 10 onwards if last count was 10)
-    const newMessages = currentMessages.slice(lastScrapedMessageCount);
-    lastScrapedMessageCount = currentMessages.length;
+  // Handle conversation changes (initial load or chat switches)
+  if (newConvId !== conversationId) {
+    const isNewChatRedirect = conversationId === 'default_conv' && newConvId !== 'default_conv';
+    conversationId = newConvId;
+    conversationTitle = document.title || `${platform.toUpperCase()} Chat`;
+    
+    if (!isNewChatRedirect) {
+      // It's a genuine switch to a different conversation
+      processedMessageSignatures.clear();
+      currentMessages.forEach((msg, idx) => {
+        const sig = `${msg.role}_${msg.content.substring(0, 100)}_${idx}`;
+        processedMessageSignatures.add(sig);
+      });
+      lastScrapedMessageCount = currentMessages.length;
+      
+      // Query current stats from background to show them
+      chrome.runtime.sendMessage({ type: 'GET_CURRENT_USAGE', platform }, (response) => {
+        if (response && response.success && response.stats) {
+          updateWidgetDisplay(response.stats);
+        }
+      });
+      return; // Don't send initial history of the switched conversation
+    }
+  }
 
+  // Identify new messages that have not been processed yet
+  const newMessages: typeof currentMessages = [];
+  currentMessages.forEach((msg, idx) => {
+    const sig = `${msg.role}_${msg.content.substring(0, 100)}_${idx}`;
+    if (!processedMessageSignatures.has(sig)) {
+      processedMessageSignatures.add(sig);
+      newMessages.push(msg);
+    }
+  });
+
+  lastScrapedMessageCount = currentMessages.length;
+
+  if (newMessages.length > 0) {
     // Send only the newly added messages to the background script
     newMessages.forEach((msg) => {
       chrome.runtime.sendMessage({
