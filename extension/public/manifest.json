@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "AI Usage Guardian",
+  "version": "1.0.0",
+  "description": "Monitor and budget token and message usage across Claude, ChatGPT, Gemini, Grok, and Perplexity in real-time.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": [
+    "*://*.chatgpt.com/*",
+    "*://*.claude.ai/*",
+    "*://*.gemini.google.com/*",
+    "*://*.x.com/*",
+    "*://*.grok.com/*",
+    "*://*.perplexity.ai/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.chatgpt.com/*",
+        "*://*.claude.ai/*",
+        "*://*.gemini.google.com/*",
+        "*://*.x.com/*",
+        "*://*.grok.com/*",
+        "*://*.perplexity.ai/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AI Usage Guardian"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
