@@ -207,7 +207,11 @@ function updateWidgetDisplay(stats: any) {
     tokensUsed: stats.tokensUsed || 0,
     limit: stats.limit || 100000,
     messageCount: stats.messageCount || 0,
-    percentUsed: stats.percentUsed || 0
+    percentUsed: stats.percentUsed || 0,
+    nativeMessagesUsed: stats.nativeMessagesUsed,
+    nativeMessageLimit: stats.nativeMessageLimit,
+    nativeResetWindowHours: stats.nativeResetWindowHours,
+    nativePercentUsed: stats.nativePercentUsed
   });
 }
 
@@ -283,7 +287,11 @@ function checkAndInjectUsageBar() {
         tokensUsed: lastStats.tokensUsed || 0,
         limit: lastStats.limit || 100000,
         messageCount: lastStats.messageCount || 0,
-        percentUsed: lastStats.percentUsed || 0
+        percentUsed: lastStats.percentUsed || 0,
+        nativeMessagesUsed: lastStats.nativeMessagesUsed,
+        nativeMessageLimit: lastStats.nativeMessageLimit,
+        nativeResetWindowHours: lastStats.nativeResetWindowHours,
+        nativePercentUsed: lastStats.nativePercentUsed
       });
     }
   }
