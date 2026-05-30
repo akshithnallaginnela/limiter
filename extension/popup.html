@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Usage Guardian</title>
+  <style>
+    :root {
+      --bg-dark: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.85);
+      --border: rgba(226, 232, 240, 0.8);
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --primary: #6366f1; /* Indigo */
+      --primary-hover: #4f46e5;
+      --accent-blue: #3b82f6;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 360px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text);
+    }
+
+    .container {
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-icon {
+      width: 24px;
+      height: 24px;
+      background: radial-gradient(circle, var(--primary) 0%, var(--primary-hover) 100%);
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    h1 {
+      font-size: 16px;
+      margin: 0;
+      font-weight: 700;
+      background: linear-gradient(135deg, #1e293b 0%, #64748b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+
+    .card-title {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 0;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .stat-val {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .progress-container {
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .budget-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .btn {
+      width: 100%;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      margin-top: 8px;
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+
+    .platform-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .platform-tab {
+      background: rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px;
+      font-size: 11px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .platform-tab.active {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .settings-group {
+      margin-bottom: 12px;
+    }
+
+    .settings-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .input-field {
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    select.input-field option {
+      background-color: white;
+      color: var(--text);
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 16px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-tab {
+      flex: 1;
+      text-align: center;
+      padding: 8px 0;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      font-weight: 600;
+    }
+
+    .nav-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--primary);
+      font-weight: 700;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon"></div>
+        <h1>Usage Guardian</h1>
+      </div>
+      <span class="status-badge" id="sync-status">Local Mode</span>
+    </header>
+
+    <div class="nav-tabs">
+      <div class="nav-tab active" id="tab-overview-btn">Overview</div>
+      <div class="nav-tab" id="tab-budget-btn">Budget</div>
+      <div class="nav-tab" id="tab-settings-btn">Sync</div>
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div class="tab-content active" id="tab-overview">
+      <div class="platform-selector">
+        <div class="platform-tab active" data-platform="all">Global</div>
+        <div class="platform-tab" data-platform="claude">Claude</div>
+        <div class="platform-tab" data-platform="chatgpt">ChatGPT</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Token Consumption</div>
+        <div class="stat-row">
+          <span class="stat-label">Estimated Used</span>
+          <span class="stat-val" id="tokens-used">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Daily Limit</span>
+          <span class="stat-val" id="tokens-limit">100,000</span>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="tokens-progress"></div>
+          </div>
+        </div>
+        <div class="budget-meta">
+          <span id="tokens-percent">0% used</span>
+          <span id="tokens-remaining">100,000 remaining</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Activity Metrics</div>
+        <div class="stat-row">
+          <span class="stat-label">Total Messages</span>
+          <span class="stat-val" id="msg-count">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Active Chats</span>
+          <span class="stat-val" id="conv-count">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Burn Rate</span>
+          <span class="stat-val" id="burn-rate">0 t/hr</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUDGET TAB -->
+    <div class="tab-content" id="tab-budget">
+      <div class="card">
+        <div class="card-title">Configure Limits</div>
+        <div class="settings-group">
+          <label for="budget-platform-select">Platform</label>
+          <select id="budget-platform-select" class="input-field">
+            <option value="all">Global (All Platforms)</option>
+            <option value="chatgpt">ChatGPT</option>
+            <option value="claude">Claude</option>
+            <option value="gemini">Gemini</option>
+            <option value="grok">Grok</option>
+            <option value="perplexity">Perplexity</option>
+          </select>
+        </div>
+        <div class="settings-group">
+          <label for="daily-limit-input">Daily Token Limit</label>
+          <input type="number" id="daily-limit-input" class="input-field" value="100000" step="5000">
+        </div>
+        <div class="settings-group">
+          <label for="daily-msg-limit-input">Daily Message Limit</label>
+          <input type="number" id="daily-msg-limit-input" class="input-field" value="100">
+        </div>
+        <button class="btn" id="save-budget-btn">Save Budget Settings</button>
+      </div>
+    </div>
+
+    <!-- SYNC TAB -->
+    <div class="tab-content" id="tab-settings">
+      <div class="card">
+        <div class="card-title">Account Sync (Supabase)</div>
+        <div class="settings-group" id="login-form">
+          <div class="settings-group">
+            <label for="auth-email">Email</label>
+            <input type="email" id="auth-email" class="input-field" placeholder="you@example.com">
+          </div>
+          <div class="settings-group">
+            <label for="auth-password">Password</label>
+            <input type="password" id="auth-password" class="input-field" placeholder="••••••••">
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn" id="login-btn" style="flex: 1;">Login</button>
+            <button class="btn btn-secondary" id="signup-btn" style="flex: 1; margin-top: 0;">Sign Up</button>
+          </div>
+        </div>
+        <div id="profile-info" style="display: none;">
+          <div class="stat-row" style="margin-bottom: 12px;">
+            <span class="stat-label">Logged in as</span>
+            <span class="stat-val" id="profile-email">-</span>
+          </div>
+          <button class="btn" id="sync-now-btn">Sync Data Now</button>
+          <button class="btn btn-secondary" id="logout-btn">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      AI Usage Guardian v1.0.0
+    </footer>
+  </div>
+  <script type="module" src="./src/popup/popup.ts"></script>
+</body>
+</html>
