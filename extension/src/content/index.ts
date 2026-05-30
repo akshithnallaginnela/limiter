@@ -1,16 +1,18 @@
 import { createWidget, updateWidgetStats } from './platforms/widget';
 import { estimateTokens } from '../utils/tokenizer';
+import { getChatboxContainer, injectUsageBar, updateUsageBar } from './platforms/usageBar';
 
 let activePlatform = 'unknown';
 let conversationId = 'default_conv';
 let conversationTitle = 'New Chat';
 let injectedWidget: HTMLDivElement | null = null;
 let lastScrapedMessageCount = 0;
+let lastStats: any = null;
 
 // Determine platform from URL
 function detectPlatform(): string {
   const host = window.location.hostname;
-  if (host.includes('chatgpt.com')) return 'chatgpt';
+  if (host.includes('chatgpt.com') || host.includes('openai.com')) return 'chatgpt';
   if (host.includes('claude.ai')) return 'claude';
   if (host.includes('gemini.google.com')) return 'gemini';
   if (host.includes('x.com') || host.includes('grok.com')) return 'grok';
@@ -37,85 +39,96 @@ function scrapeConversationData() {
     newConvId = window.location.hash || 'default_conv';
   }
 
+  let currentMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+
+  try {
+    if (platform === 'claude') {
+      const elements = document.querySelectorAll('[data-testid="user-message"], .font-user-message, [data-testid="assistant-message"], .font-claude-message');
+      currentMessages = Array.from(elements).map((el) => {
+        const isUser = el.getAttribute('data-testid') === 'user-message' || el.classList.contains('font-user-message');
+        return {
+          role: (isUser ? 'user' : 'assistant') as 'user' | 'assistant',
+          content: el.textContent?.trim() || ''
+        };
+      }).filter(m => m.content.length > 0);
+    } else if (platform === 'chatgpt') {
+      const elements = document.querySelectorAll('[data-testid^="conversation-turn"], article');
+      currentMessages = Array.from(elements).map((el) => {
+        const isUser = el.querySelector('[data-testid="user-message"]') !== null || 
+                       el.querySelector('[class*="user"]') !== null || 
+                       el.outerHTML.includes('user');
+        const text = el.querySelector('.markdown')?.textContent?.trim() || el.textContent?.trim() || '';
+        return {
+          role: (isUser ? 'user' : 'assistant') as 'user' | 'assistant',
+          content: text
+        };
+      }).filter(m => m.content.length > 0);
+    } else if (platform === 'gemini') {
+      const elements = document.querySelectorAll('.user-query, [class*="query-text"], [class*="user-message"], .model-response, [class*="model-response"], [class*="assistant-message"]');
+      currentMessages = Array.from(elements).map((el) => {
+        const isUser = el.classList.contains('user-query') || el.className.includes('query-text') || el.className.includes('user-message');
+        return {
+          role: (isUser ? 'user' : 'assistant') as 'user' | 'assistant',
+          content: el.textContent?.trim() || ''
+        };
+      }).filter(m => m.content.length > 0);
+    } else if (platform === 'grok') {
+      const elements = document.querySelectorAll('[data-testid="grok-message-container"], [class*="message-row"], [class*="message-bubble"]');
+      currentMessages = Array.from(elements).map((el) => {
+        const isUser = el.querySelector('[class*="user"]') !== null || 
+                       el.className.includes('user') || 
+                       el.outerHTML.includes('user');
+        return {
+          role: (isUser ? 'user' : 'assistant') as 'user' | 'assistant',
+          content: el.textContent?.trim() || ''
+        };
+      }).filter(m => m.content.length > 0);
+    } else if (platform === 'perplexity') {
+      const elements = document.querySelectorAll('[class*="UserMessage"], [class*="query"], [class*="Answer"], [class*="answer"]');
+      currentMessages = Array.from(elements).map((el) => {
+        const isUser = el.className.includes('UserMessage') || el.className.includes('query');
+        return {
+          role: (isUser ? 'user' : 'assistant') as 'user' | 'assistant',
+          content: el.textContent?.trim() || ''
+        };
+      }).filter(m => m.content.length > 0);
+    }
+  } catch (err) {
+    console.error('Error selecting messages in scrapeConversationData:', err);
+  }
+
+  // Handle conversation changes (initial load or chat switches)
   if (newConvId !== conversationId) {
     conversationId = newConvId;
-    lastScrapedMessageCount = 0;
-    // Get chat title
+    // Set to current count so we ignore the historical prompts already visible on the screen
+    lastScrapedMessageCount = currentMessages.length;
     conversationTitle = document.title || `${platform.toUpperCase()} Chat`;
-  }
-
-  // Scrape message lists
-  let userMessages: string[] = [];
-  let assistantMessages: string[] = [];
-
-  if (platform === 'claude') {
-    // Select user messages
-    document.querySelectorAll('[data-testid="user-message"]').forEach((el) => {
-      userMessages.push(el.textContent || '');
-    });
-    // Select assistant messages (standard prose text)
-    document.querySelectorAll('.font-claude-message').forEach((el) => {
-      assistantMessages.push(el.textContent || '');
-    });
-  } else if (platform === 'chatgpt') {
-    document.querySelectorAll('[data-testid^="conversation-turn"]').forEach((el) => {
-      const isUser = el.querySelector('[data-testid="user-message"]') !== null;
-      const text = el.querySelector('.markdown')?.textContent || el.textContent || '';
-      if (isUser) {
-        userMessages.push(text);
-      } else {
-        assistantMessages.push(text);
+    
+    // Immediately query current stats from background to show them
+    chrome.runtime.sendMessage({ type: 'GET_CURRENT_USAGE', platform }, (response) => {
+      if (response && response.success && response.stats) {
+        updateWidgetDisplay(response.stats);
       }
     });
-  } else if (platform === 'gemini') {
-    document.querySelectorAll('.user-query').forEach((el) => {
-      userMessages.push(el.textContent || '');
-    });
-    document.querySelectorAll('.model-response').forEach((el) => {
-      assistantMessages.push(el.textContent || '');
-    });
-  } else {
-    // Generic selectors for unknown or generic markdown bubbles
-    document.querySelectorAll('pre, p, blockquote').forEach((el) => {
-      // Very basic fallback parser if needed
-    });
+    return; // Don't send initial history
   }
 
-  const totalScraped = userMessages.length + assistantMessages.length;
-  if (totalScraped > lastScrapedMessageCount) {
-    lastScrapedMessageCount = totalScraped;
+  if (currentMessages.length > lastScrapedMessageCount) {
+    // Slice only the newly appended messages (e.g. index 10 onwards if last count was 10)
+    const newMessages = currentMessages.slice(lastScrapedMessageCount);
+    lastScrapedMessageCount = currentMessages.length;
 
-    // Send the latest messages to the background script
-    // Send user messages
-    userMessages.forEach((msg, idx) => {
+    // Send only the newly added messages to the background script
+    newMessages.forEach((msg) => {
       chrome.runtime.sendMessage({
         type: 'NEW_MESSAGE_EVENT',
         payload: {
           platform,
           external_conv_id: conversationId,
           title: conversationTitle,
-          role: 'user',
-          content: msg,
-          estimated_tokens: estimateTokens(msg)
-        }
-      }, (response) => {
-        if (response && response.success) {
-          updateWidgetDisplay(response.stats);
-        }
-      });
-    });
-
-    // Send assistant messages
-    assistantMessages.forEach((msg, idx) => {
-      chrome.runtime.sendMessage({
-        type: 'NEW_MESSAGE_EVENT',
-        payload: {
-          platform,
-          external_conv_id: conversationId,
-          title: conversationTitle,
-          role: 'assistant',
-          content: msg,
-          estimated_tokens: estimateTokens(msg)
+          role: msg.role,
+          content: msg.content,
+          estimated_tokens: estimateTokens(msg.content)
         }
       }, (response) => {
         if (response && response.success) {
@@ -127,20 +140,30 @@ function scrapeConversationData() {
 }
 
 function updateWidgetDisplay(stats: any) {
-  if (!injectedWidget) return;
+  lastStats = stats;
   
-  // Calculate mock hours and daily percentages
-  const now = new Date();
-  const resetHours = 23 - now.getHours();
-  const resetMins = 59 - now.getMinutes();
+  if (injectedWidget) {
+    // Calculate mock hours and daily percentages
+    const now = new Date();
+    const resetHours = 23 - now.getHours();
+    const resetMins = 59 - now.getMinutes();
 
-  updateWidgetStats(injectedWidget, {
-    sessionPercent: Math.min(100, Math.round(stats.percentUsed * 0.4)), // Simulate sub-session partition
-    sessionResetText: `Resets in ${resetHours}h ${resetMins}m`,
-    dailyPercent: stats.percentUsed,
-    dailyResetText: `Resets in ${resetHours}h ${resetMins}m`,
-    messageCount: stats.messageCount,
-    updatedMinutesAgo: 0
+    updateWidgetStats(injectedWidget, {
+      sessionPercent: Math.min(100, Math.round(stats.percentUsed * 0.4)), // Simulate sub-session partition
+      sessionResetText: `Resets in ${resetHours}h ${resetMins}m`,
+      dailyPercent: stats.percentUsed,
+      dailyResetText: `Resets in ${resetHours}h ${resetMins}m`,
+      messageCount: stats.messageCount,
+      updatedMinutesAgo: 0
+    });
+  }
+
+  // Update the chatbox usage bar if it is currently in the DOM
+  updateUsageBar({
+    tokensUsed: stats.tokensUsed || 0,
+    limit: stats.limit || 100000,
+    messageCount: stats.messageCount || 0,
+    percentUsed: stats.percentUsed || 0
   });
 }
 
@@ -194,14 +217,60 @@ function initializeWidget() {
     injectedWidget = createWidget(platform, handleExportChat);
     document.body.appendChild(injectedWidget);
 
-    // Initial limits check and widget display
-    chrome.runtime.sendMessage({ type: 'GET_CURRENT_LIMITS' }, (response) => {
-      if (response && response.budgets) {
-        const budget = response.budgets.find((b: any) => b.platform === platform) || { daily_token_limit: 100000 };
-        // Trigger initial stats load
-        updateWidgetDisplay({ percentUsed: 0, messageCount: 0 });
+    // Initial current usage check and widget display
+    chrome.runtime.sendMessage({ type: 'GET_CURRENT_USAGE', platform }, (response) => {
+      if (response && response.success && response.stats) {
+        updateWidgetDisplay(response.stats);
+      } else {
+        updateWidgetDisplay({ percentUsed: 0, messageCount: 0, tokensUsed: 0, limit: 100000 });
       }
+      checkAndInjectUsageBar();
     });
+  }
+}
+
+function checkAndInjectUsageBar() {
+  if (activePlatform === 'unknown') return;
+  const chatboxContainer = getChatboxContainer(activePlatform);
+  if (chatboxContainer) {
+    const bar = injectUsageBar(chatboxContainer);
+    if (bar && lastStats) {
+      updateUsageBar({
+        tokensUsed: lastStats.tokensUsed || 0,
+        limit: lastStats.limit || 100000,
+        messageCount: lastStats.messageCount || 0,
+        percentUsed: lastStats.percentUsed || 0
+      });
+    }
+  }
+}
+
+function setupActiveInputListener() {
+  try {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        setTimeout(() => {
+          scrapeConversationData();
+        }, 800);
+      }
+    }, true);
+
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.closest('button[class*="send"]') ||
+        target.closest('button[data-testid*="send"]') ||
+        target.closest('button[class*="submit"]') ||
+        target.closest('[aria-label="Send prompt"]') ||
+        target.closest('svg[class*="send"]')
+      ) {
+        setTimeout(() => {
+          scrapeConversationData();
+        }, 800);
+      }
+    }, true);
+  } catch (err) {
+    console.error('Error setting up active input listener:', err);
   }
 }
 
@@ -209,11 +278,14 @@ function initializeWidget() {
 function startObserver() {
   initializeWidget();
   scrapeConversationData();
+  checkAndInjectUsageBar();
+  setupActiveInputListener();
 
   const observer = new MutationObserver(() => {
     // Prevent observer loops during self injections
     observer.disconnect();
     scrapeConversationData();
+    checkAndInjectUsageBar();
     // Restart observing
     observer.observe(document.body, { childList: true, subtree: true });
   });
@@ -223,7 +295,8 @@ function startObserver() {
   // Periodically scrape to keep sync active even if window changes without heavy DOM updates
   setInterval(() => {
     scrapeConversationData();
-  }, 10000);
+    checkAndInjectUsageBar();
+  }, 3000);
 }
 
 // Wait for load

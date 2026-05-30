@@ -36,6 +36,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true;
   }
+
+  if (message.type === 'GET_CURRENT_USAGE') {
+    getStorageData().then((cache) => {
+      const stats = calculateCurrentUsage(message.platform || 'all', cache);
+      sendResponse({ success: true, stats });
+    });
+    return true;
+  }
   return false;
 });
 
@@ -106,8 +114,17 @@ async function handleNewMessageEvent(payload: NewMessagePayload) {
 }
 
 // Calculates active tokens and counts
+const NATIVE_LIMITS: { [platform: string]: { limit: number; windowHours: number } } = {
+  chatgpt: { limit: 10, windowHours: 5 },
+  claude: { limit: 30, windowHours: 5 },
+  gemini: { limit: 500, windowHours: 24 },
+  grok: { limit: 15, windowHours: 2 },
+  perplexity: { limit: 5, windowHours: 24 },
+  all: { limit: 100, windowHours: 24 }
+};
+
 function calculateCurrentUsage(platform: string, cache: any) {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toLocaleDateString('en-CA');
   let tokensUsed = 0;
   let messageCount = 0;
 
@@ -115,10 +132,25 @@ function calculateCurrentUsage(platform: string, cache: any) {
     if (platform !== 'all' && c.platform !== platform) continue;
     
     for (const m of c.messages) {
-      const msgDate = m.created_at.split('T')[0];
+      const msgDate = new Date(m.created_at).toLocaleDateString('en-CA');
       if (msgDate === todayStr) {
         tokensUsed += m.estimated_tokens;
         messageCount += 1;
+      }
+    }
+  }
+
+  // Calculate rolling-window native message usage
+  const nowTime = Date.now();
+  const nativeLimitInfo = NATIVE_LIMITS[platform] || { limit: 100, windowHours: 24 };
+  const cutoffTime = nowTime - nativeLimitInfo.windowHours * 60 * 60 * 1000;
+  
+  let nativeMessagesUsed = 0;
+  for (const c of cache.conversations) {
+    if (platform !== 'all' && c.platform !== platform) continue;
+    for (const m of c.messages) {
+      if (new Date(m.created_at).getTime() >= cutoffTime) {
+        nativeMessagesUsed += 1;
       }
     }
   }
@@ -129,7 +161,12 @@ function calculateCurrentUsage(platform: string, cache: any) {
     tokensUsed,
     limit: budget.daily_token_limit,
     messageCount,
-    percentUsed: Math.round((tokensUsed / budget.daily_token_limit) * 100)
+    percentUsed: Math.round((tokensUsed / budget.daily_token_limit) * 100),
+    
+    nativeMessagesUsed,
+    nativeMessageLimit: nativeLimitInfo.limit,
+    nativeResetWindowHours: nativeLimitInfo.windowHours,
+    nativePercentUsed: Math.round((nativeMessagesUsed / nativeLimitInfo.limit) * 100)
   };
 }
 

@@ -16,25 +16,25 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
       position: fixed;
       bottom: 24px;
       right: 24px;
-      width: 440px;
+      width: 310px;
       background: #171717;
       border: 1px solid #2e2e2e;
-      border-radius: 12px;
+      border-radius: 8px;
       color: #e5e5e5;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 13px;
+      font-size: 12px;
       z-index: 999999;
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-      padding: 16px;
+      padding: 12px;
       box-sizing: border-box;
       user-select: none;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
     }
     
     #ai-usage-guardian-widget.collapsed {
-      width: 140px;
-      padding: 8px 12px;
-      height: 38px;
+      width: 120px;
+      padding: 6px 10px;
+      height: 30px;
       overflow: hidden;
     }
 
@@ -42,7 +42,7 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     #ai-usage-guardian-widget.collapsed .w-header {
@@ -51,13 +51,13 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
 
     .w-title {
       font-weight: 600;
-      font-size: 14px;
+      font-size: 13px;
       color: #ffffff;
     }
 
     .w-header-actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
       color: #888888;
     }
@@ -72,14 +72,14 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
     }
 
     .w-section {
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .w-section-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
 
     .w-label {
@@ -88,21 +88,21 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
     }
 
     .w-meta {
-      font-size: 11px;
+      font-size: 10px;
       color: #7a7a7a;
     }
 
     .w-progress-container {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
     }
 
     .w-progress-bar-bg {
       flex: 1;
-      height: 6px;
+      height: 5px;
       background: #2b2b2b;
-      border-radius: 3px;
+      border-radius: 2px;
       overflow: hidden;
     }
 
@@ -110,21 +110,21 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
       height: 100%;
       background: #e06b52; /* Coral/orange theme color from image */
       width: 0%;
-      border-radius: 3px;
+      border-radius: 2px;
       transition: width 0.4s ease;
     }
 
     .w-percent-display {
       font-weight: 600;
-      width: 32px;
+      width: 28px;
       text-align: right;
     }
 
     .w-checkbox-wrap {
       display: flex;
       align-items: center;
-      gap: 4px;
-      font-size: 11px;
+      gap: 3px;
+      font-size: 10px;
       color: #8a8a8a;
     }
 
@@ -136,15 +136,15 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
     .w-slider-row {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-top: 14px;
+      gap: 8px;
+      margin-top: 10px;
     }
 
     .w-slider {
       flex: 1;
-      height: 6px;
+      height: 5px;
       background: #2b2b2b;
-      border-radius: 3px;
+      border-radius: 2px;
       outline: none;
       -webkit-appearance: none;
       accent-color: #3b82f6; /* Blue slider handle */
@@ -153,21 +153,21 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
     .w-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background: #3b82f6;
       cursor: pointer;
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
     }
 
     .w-slider-val-box {
       background: #222222;
       border: 1px solid #3a3a3a;
       border-radius: 4px;
-      padding: 4px 8px;
+      padding: 2px 6px;
       font-weight: bold;
-      width: 32px;
+      width: 28px;
       text-align: center;
     }
 
@@ -175,11 +175,11 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
       background: #e06b52;
       color: #ffffff;
       border: none;
-      border-radius: 6px;
-      padding: 6px 14px;
+      border-radius: 4px;
+      padding: 4px 10px;
       font-weight: 600;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 11px;
       transition: background 0.2s;
     }
 
@@ -190,15 +190,15 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
     .w-footer-avatar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 12px;
+      gap: 6px;
+      margin-top: 8px;
       border-top: 1px solid #2e2e2e;
-      padding-top: 12px;
+      padding-top: 8px;
     }
 
     .w-avatar {
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       background: #a1a1aa;
       color: #171717;
@@ -206,15 +206,15 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      font-size: 11px;
+      font-size: 10px;
     }
 
     .w-badge-status {
-      font-size: 10px;
+      font-size: 9px;
       background: #e06b52;
       color: #fff;
-      padding: 1px 4px;
-      border-radius: 3px;
+      padding: 1px 3px;
+      border-radius: 2px;
       font-weight: bold;
     }
   `;
@@ -313,6 +313,69 @@ export function createWidget(platform: string, onExportClick: () => void): HTMLD
 
   const exportBtn = container.querySelector('#w-export-btn');
   exportBtn?.addEventListener('click', onExportClick);
+
+  // Make the widget draggable by its header
+  const header = container.querySelector('.w-header') as HTMLElement;
+  if (header) {
+    header.style.cursor = 'move';
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+
+    header.addEventListener('mousedown', (e) => {
+      // Don't drag if clicking buttons or actions inside the header
+      if ((e.target as HTMLElement).closest('.w-header-actions') || (e.target as HTMLElement).id === 'w-minimize-btn' || (e.target as HTMLElement).id === 'w-refresh-btn') {
+        return;
+      }
+      
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      
+      const rect = container.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
+      
+      // Switch positioning to precise top/left values
+      container.style.bottom = 'auto';
+      container.style.right = 'auto';
+      container.style.left = `${startLeft}px`;
+      container.style.top = `${startTop}px`;
+      container.style.margin = '0';
+      
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+      e.preventDefault();
+    });
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      
+      let newLeft = startLeft + dx;
+      let newTop = startTop + dy;
+      
+      const rect = container.getBoundingClientRect();
+      const maxX = window.innerWidth - rect.width;
+      const maxY = window.innerHeight - rect.height;
+      
+      // Keep within the viewport boundaries
+      newLeft = Math.max(0, Math.min(newLeft, maxX));
+      newTop = Math.max(0, Math.min(newTop, maxY));
+      
+      container.style.left = `${newLeft}px`;
+      container.style.top = `${newTop}px`;
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }
 
   return container;
 }

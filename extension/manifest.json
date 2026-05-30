@@ -10,6 +10,7 @@
   ],
   "host_permissions": [
     "*://*.chatgpt.com/*",
+    "*://*.openai.com/*",
     "*://*.claude.ai/*",
     "*://*.gemini.google.com/*",
     "*://*.x.com/*",
@@ -24,6 +25,7 @@
     {
       "matches": [
         "*://*.chatgpt.com/*",
+        "*://*.openai.com/*",
         "*://*.claude.ai/*",
         "*://*.gemini.google.com/*",
         "*://*.x.com/*",

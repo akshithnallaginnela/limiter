@@ -4,13 +4,19 @@ import { syncWithBackend } from '../services/sync';
 let activePlatform = 'all';
 const BACKEND_URL = 'http://localhost:8000/api/v1';
 
-document.addEventListener('DOMContentLoaded', () => {
+function init() {
   setupTabs();
   setupPlatformTabs();
   loadOverviewData();
   setupBudgetForm();
   setupAuthForm();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 // 1. Tab switches
 function setupTabs() {
@@ -49,7 +55,7 @@ function setupPlatformTabs() {
 // 3. Load Stats in Overview Card
 async function loadOverviewData() {
   const cache = await getStorageData();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toLocaleDateString('en-CA');
 
   // Calculate tokens & message counts for active platform
   let tokensUsed = 0;
@@ -61,7 +67,7 @@ async function loadOverviewData() {
     
     let hasMessageToday = false;
     c.messages.forEach((m) => {
-      const msgDate = m.created_at.split('T')[0];
+      const msgDate = new Date(m.created_at).toLocaleDateString('en-CA');
       if (msgDate === todayStr) {
         tokensUsed += m.estimated_tokens;
         messageCount += 1;
