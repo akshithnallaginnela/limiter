@@ -38,34 +38,19 @@ interface AnalyticsState {
 }
 
 const MOCK_METRICS: GeneralMetrics = {
-  total_messages: 148,
-  total_conversations: 12,
-  total_tokens: 84500,
-  most_active_platform: 'Claude',
-  most_active_conversation_title: 'UI refactoring using TailwindCSS',
-  burn_rate_tokens_per_hour: 4500,
-  predicted_daily_usage: 108000,
-  estimated_exhaustion_hours: 5.2,
-  efficiency_score: 81,
-  efficiency_suggestions: [
-    'Reduce repeated prompts (re-evaluate constraints)',
-    'Split large files into smaller parts when feeding context',
-    'Re-use existing active chats instead of starting fresh ones for minor details'
-  ]
+  total_messages: 0,
+  total_conversations: 0,
+  total_tokens: 0,
+  most_active_platform: 'None',
+  most_active_conversation_title: 'None',
+  burn_rate_tokens_per_hour: 0,
+  predicted_daily_usage: 0,
+  estimated_exhaustion_hours: 24.0,
+  efficiency_score: 100,
+  efficiency_suggestions: []
 };
 
-const MOCK_CHARTS: ChartRecord[] = [
-  { date: '05-24', platform: 'claude', tokens_input: 12000, tokens_output: 15000, message_count: 22, conversation_count: 2 },
-  { date: '05-24', platform: 'chatgpt', tokens_input: 8000, tokens_output: 10000, message_count: 14, conversation_count: 1 },
-  { date: '05-25', platform: 'claude', tokens_input: 15000, tokens_output: 22000, message_count: 35, conversation_count: 3 },
-  { date: '05-25', platform: 'gemini', tokens_input: 4000, tokens_output: 6000, message_count: 8, conversation_count: 1 },
-  { date: '05-26', platform: 'claude', tokens_input: 18000, tokens_output: 24000, message_count: 42, conversation_count: 2 },
-  { date: '05-26', platform: 'perplexity', tokens_input: 2000, tokens_output: 3000, message_count: 5, conversation_count: 1 },
-  { date: '05-27', platform: 'claude', tokens_input: 10000, tokens_output: 12000, message_count: 20, conversation_count: 1 },
-  { date: '05-27', platform: 'chatgpt', tokens_input: 14000, tokens_output: 18000, message_count: 30, conversation_count: 2 },
-  { date: '05-28', platform: 'claude', tokens_input: 22000, tokens_output: 28000, message_count: 50, conversation_count: 4 },
-  { date: '05-29', platform: 'chatgpt', tokens_input: 16000, tokens_output: 20000, message_count: 32, conversation_count: 2 }
-];
+const MOCK_CHARTS: ChartRecord[] = [];
 
 const MOCK_BUDGETS: BudgetConfig[] = [
   { platform: 'all', daily_token_limit: 100000, daily_message_limit: 100 },

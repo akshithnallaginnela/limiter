@@ -64,3 +64,6 @@ desktop.ini
 .gemini/
 .antigravity/
 .antigravityignore
+.system_generated/
+*.log
+*.log.*
